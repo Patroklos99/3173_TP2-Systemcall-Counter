@@ -1,92 +1,167 @@
-# INF3173 TP1 E22
+# TP1 - `echelon`
 
+L'objectif du TP1 est de développer l'utilitaire `echelon` qui compte le nombre d'appels système `fork`, `clone` ou `execve` faient par un processus et ses processus enfants.
 
+## Avant de commencer
 
-## Getting started
+* Cloner (le bouton `fork` en haut à droite) ce dépôt sur le gitlab départemental.
+* Le rendre privé : dans `Settings` → `General` → `Visibility` → `Project visibility` → `Private` (n'oubliez pas d'enregistrer).
+* Ajouter l'utilisateur `@abdenbi_m` comme mainteneur (oui, j'ai besoin de ce niveau de droits) : `Project information` → `Members` → `Invite member` → `@abdenbi_m`.
+* ⚠️ Mal effectuer ces étapes vous expose à des pénalités importantes sans préavis.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## Description de l'outil
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.info.uqam.ca/inf3173/20222/inf3173-tp1-e22.git
-git branch -M main
-git push -uf origin main
+echelon commande [argument...]
 ```
 
-## Integrate with your tools
+`echelon` va créer un processus enfant avec l'appel `fork`. Dans ce processus enfant `echelon`, avec l'appel système `execve`, va exécuter `commande` et ses arguments s'il y a lieu. 
+Par la suite, `echelon` compte et affiche le nombre d'appels système `fork`, `clone` et `execve` effectués par le processus `commande` et ses sous-processus.
+À chaque fois que le processus `commande` ou l'un de ses processus enfants, fait un de ces appela système, `echelon` va comptabiliser cet appel. Les totaux sont affichés à la fin de l'exécution du processus `commande` et de tous ses processus enfants dans cet ordre,
+- un premier nombre qui représente la somme des nombres d'appels à `fork` et à `clone`;
+- un deuxième nombre qui représente le nombre d'appels à `execve`.
+- si aucun appel `fork` et `clone` ou `execve` n'est fait, la valeur 0 sera affichée. 
 
-- [ ] [Set up project integrations](https://gitlab.info.uqam.ca/inf3173/20222/inf3173-tp1-e22/-/settings/integrations)
+<p>
 
-## Collaborate with your team
+<details>
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+<summary>Exemple</summary>
 
-## Test and Deploy
+<pre>
+<b>iam@groot:~/$</b> ./echelon /bin/bash -c "echo 'aucun test ne passe :(' | wc -c"
+23
+2
+2
+<b>iam@groot:~/$</b> strace -c /bin/bash -c "echo 'aucun test ne passe :(' | wc -c" 2>&1 | grep -E '(calls|clone|execve)'
+% time     seconds  usecs/call     calls    errors syscall
+ 30,97    0,000083          41         2           clone
+  0,00    0,000000           0         1           execve
+</pre>
+On voit que `echelon` retourne un total de 2 appels à `clone` et 2 appels `execve`. Contrairement à `strace` qui retourne 2 appels à `clone` et 1 appel à `execve` (voir la colonne `calls` qui donne le nombre d'appels effectués). La raison est que `echelon` va compter le `execve` que son processus enfant va faire pour lancer la commande `/bin/bash -c "echo 'aucun test ne passe :(' | wc -c"`, ce qui fait qu'il y a 1 de plus que ce que `strace` comptabilise.
+</details>
 
-Use the built-in continuous integration in GitLab.
+</p>
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### Traitement des erreurs et valeur de retour
 
-***
+- Le code de retour de `echelon` est celui de `commande`.
+- Si un appel système utilisé par `echelon` échoue, la valeur 1 doit être retournée.
+- Si `commande` est terminée par un signal, le code de retour est 128 + le numéro du signal.
+- `echelon` **n'affiche aucun message d'erreur**.
 
-# Editing this README
+## Directives d'implémentation
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+Vous devez développer le programme en C.
+Le fichier source doit s'appeler `echelon.c` et être à la racine du dépôt.
+Vu la taille du projet, tout doit rentrer dans ce seul fichier source.
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Pour la réalisation du TP, vous devez respecter les directives suivantes.
 
-## Name
-Choose a self-explaining name for your project.
+### Appels système
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+L'appel système principal que vous devez utiliser est `ptrace`.
+C'est un appel système bas niveau offert par le noyau Linux (et la plupart des systèmes Unix) qui sert à implémenter les débogueurs (comme `gdb`) ou d'autres outils comme `strace`.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+`ptrace` est un appel système très puissant, car il permet à un processus de prendre le contrôle d'un autre processus, y compris sa mémoire et le code machine qu'il exécute.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+La logique principale de `ptrace` c'est que le processus surveillé (*ptracé*) s'exécute normalement jusqu'à ce qu'il se passe un événement particulier (réception d'un signal, appel système, etc.).
+À ce moment-là, le processus surveillé passe dans un **état bloqué** particulier (*ptrace stopped*) qui apparait sous un `t` avec la commande `ps`.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+Le processus qui surveille (le traceur) est notifié que le tracé est arrêté avec l'appel système `wait`.
+Plutôt que de créer un appel système dédié, les concepteurs ont réutilisé cet appel système, ce qui peut être déroutant.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+En résumé, **vous devez utiliser** les appels système suivants,
+- `ptrace` pour surveiller l'exécution d'un processus.
+- `execve` pour tout recouvrement. **Aucune fonction** de librairie parmi `execl`, `execlp`, `execle`, `execv`, `execvp` ou `execvpe` **n'est autorisée**.
+- En plus des appels système cités plus haut, vous devrez également utiliser les appels système `fork` et `wait`.
+- Noubliez pas de traiter les erreurs de chaque appel système.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Précisions
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+- Dans le cadre du TP, seul le sous-ensemble suivant des requêtes `ptrace` devra être utilisé,
+   - `PTRACE_TRACEME` pour tracer `commande`.
+   - `PTRACE_SETOPTIONS` avec les flags `PTRACE_O_EXITKILL`, `PTRACE_O_TRACEEXEC`, `PTRACE_O_TRACEFORK` et `PTRACE_O_TRACECLONE`.
+   - `PTRACE_CONT` pour faire continuer l'exécution du processus surveillé stoppé.
+- Lisez la page de manuel de `ptrace`. Elle est dense et tout ne vous sera pas utile, mais il ne faut pas ignoner les parties qui le seront.
+- Commencez par `PTRACE_O_EXITKILL`, `PTRACE_O_TRACEEXEC` et ajoutez `PTRACE_O_TRACEFORK` et `PTRACE_O_TRACECLONE` dans un second temps.
+- Attention, `PTRACE_TRACEME` ne stoppe pas l'appelant, vous pouvez donc faire `raise(SIGSTOP);` dans le processus fils juste après le `ptrace` et avant le `execve` (RTFM pour les détails).
+- Attention, remettez le signal éventuel dans `PTRACE_CONT` pour permettre à un processus de continuer son exécution s'il y a lieu (RTFM pour les détails).
+- [Lisez la page de manuel de `ptrace`](https://twitter.com/jcsrb/status/1392459191353286656).
+- L'appel système `wait` va bloquer jusqu'à ce qu'un évenement dans le processus enfant d'`echelon` ou l'un de ses enfants se produit, vous devez donc distinguer les PID des processus qui déclencent ces événements et les traiter en conséquence.
+   - Plusieurs appels à `wait` seront nécessaires.
+   - C'est à la fin du processus `commande` (terminaison par valeur retournée ou par signal) que `echelon` se terminera.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+## Acceptation et remise du TP
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### Remise
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+La remise s'effectue simplement en poussant votre code sur la branche `main` (c'est la seule branche qui sera considérée) de votre dépôt gitlab privé.
+Seule la dernière version disponible avant le **dimanche 19 juin à 23h55** sera considérée pour la correction.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+### Intégration continue
 
-## License
-For open source projects, say how it is licensed.
+Vouz pouvez compiler avec `make` (le `Makefile` est fourni).
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Vous pouvez vous familiariser avec le contenu du dépôt, en étudiant chacun des fichiers (`README.md`, `Makefile`, `check.bats`, `.gitlab-ci.yml`, etc.).
+
+⚠️ À priori, il n'y a pas de raison de modifier un autre fichier du dépôt.
+Si vous en avez besoin, ou si vous trouvez des bogues ou problèmes dans les autres fichiers, merci de me contacter.
+
+Le système d'intégration continue vérifie votre TP à chaque `push`.
+Vous pouvez vérifier localement avec `make check` (l'utilitaire `bats` entre autres est nécessaire).
+
+Les tests fournis ne couvrent que les cas d'utilisation de base, en particulier ceux présentés ici.
+Il est **fortement suggéré** d'ajouter vos propres tests dans [local.bats](local.bats) et de les pousser pour que l’intégration continue les prenne en compte.
+Ils sont dans un job distincts pour avoir une meilleure vue de l'état du projet.
+
+❤ En cas de problème pour exécuter les tests sur votre machine, merci de 1. lire la documentation présente ici et 2. poser vos questions en classe ou sur [Mattermost](https://mattermost.info.uqam.ca/forum/channels/inf3173).
+Attention toutefois à ne pas fuiter de l’information relative à votre solution (conception, morceaux de code, etc.)
+
+### Barème et critères de correction
+
+Le barème utilisé est le suivant
+
+* Seuls les tests qui passent sur l'instance `gitlab.info.uqam.ca` (avec l'intégration continue) seront considérés.
+  * 60%: pour le jeu de test public fourni dans le sujet (voir section intégration).
+  * 40%: pour un jeu de test privé exécuté lors de la correction. Ces tests pourront être plus gros, difficiles et/ou impliquer des cas limites d'utilisation (afin de vérifier l'exactitude et la robustesse de votre code).
+* Des pénalités pour des bogues spécifiques et des défauts dans le code source du programme, ce qui inclut, mais sans s'y limiter l'exactitude, la robustesse, la lisibilité, la simplicité, la conception, les commentaires, etc.
+* Note: consultez la section suivante pour des exemples de pénalités et éventuellement des conseils pour les éviter.
+
+## Mentions supplémentaires importantes
+
+⚠️ **Intégrité académique**
+Rendre public votre dépôt personnel ou votre code ici ou ailleurs ; ou faire des MR contenant votre code vers ce dépôt principal (ou vers tout autre dépôt accessible) sera considéré comme du **plagiat**.
+
+⚠️ Attention, vérifier **=/=** valider.
+Ce n'est pas parce que les tests passent chez vous ou ailleurs ou que vous avez une pastille verte sur gitlab que votre TP est valide et vaut 100%.
+Par contre, si des tests échouent quelque part, c'est généralement un bon indicateur de problèmes dans votre code.
+
+⚠️ Si votre programme **ne compile pas** ou **ne passe aucun test public**, une note de **0 sera automatiquement attribuée**, et cela indépendamment de la qualité de code source ou de la quantité de travail mise estimée.
+Il est ultimement de votre responsabilité de tester et valider votre programme.
+
+Pour les tests, autant publics que privés, les résultats qui font foi sont ceux sur l'instance `gitlab.info.uqam.ca`. Si un test réussi presque ou de temps en temps, il est considéré comme échoué (sauf rares exceptions).
+
+
+Quelques exemples de bogues fréquents dans les copies TP de INF3173 qui causent une perte de points, en plus d'être responsable de tests échoués:
+
+* Utilisation de variables ou de mémoire non initialisés (comportement indéterminé).
+* Mauvaise gestion de la mémoire dynamique (`free`, `malloc`, `calloc` et compagnie).
+* Mauvaise vérification des cas d'erreur des fonctions et appels système (souvent comportement indéterminé si le programme continue comme si de rien n'était)
+* Utilisation de valeurs numériques arbitraires (*magic number*) qui cause des comportements erronés si ces valeurs sont dépassées (souvent dans les tailles de tableau).
+* Code inutilement compliqué, donc fragile dans des cas plus ou moins limites.
+
+
+Quelques exemples de pénalités additionnelles:
+
+* Vous faites une MR sur le dépôt public avec votre code privé : à partir de -10%
+* Vous demandez à être membre du dépôt public : -5%
+* Si vous critiquez à tort l'infrastructure de test : -10%
+* Vous modifiez un fichier autre que le fichier source ou `local.bats` (ou en créez un) sans avoir l’autorisation : à partir de -10%
+* Votre dépôt n'est pas un `fork` de celui-ci : -100%
+* Votre dépôt n'est pas privé : -100%
+* L'utilisateur `@abdenbi_m` n'est pas mainteneur : -100%
+* Votre dépôt n'est pas hébergé sur le gitlab départemental : -100%
+* Vous faites une remise par courriel : -100%
+* Vous utilisez « mais chez-moi ça marche » (ou une variante) comme argument : -100%
+* Si je trouve des morceaux de votre code sur le net (même si vous en êtes l'auteur) : -100%
