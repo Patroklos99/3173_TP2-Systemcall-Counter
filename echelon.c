@@ -1,14 +1,20 @@
 /*  INF3173 - TP1
  *  Session : été 2022
- *  
+ *
  *  IDENTIFICATION.
  *
- *      Nom :
- *      Prénom :
- *      Code permanent :
+ *      Nom : Salcedo
+ *      Prénom : Renzo A.
+ *      Code permanent : SALR02089408
  *      Groupe : 40
  */
 
-int main(int argc, char **argv) {
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/ptrace.h>
+
+int main(int argc, char *argv[]) {   
     return 0;
 }
