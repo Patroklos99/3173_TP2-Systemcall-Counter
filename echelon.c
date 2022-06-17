@@ -26,5 +26,12 @@ int main(int argc, char *argv[]) {
         ptrace(PTRACE_TRACEME, pid_enfant, NULL, NULL);
         raise(SIGSTOP);
         execve(argv[1], &argv[1], NULL);
+    else {
+	wait(status);
+	ptrace(PTRACE_SETOPTIONS, pid_enfant, 0,PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
+	while(1) {
+		break;
+	}
+    }
     return 0;
 }
