@@ -17,13 +17,14 @@
 
 int main(int argc, char *argv[]) {   
     int status;
-    int compteur_1 = 0;
-    int counter_2 = 0;
+    int compteur1 = 0;
+    int compteur2 = 0;
     pid_t pid_enfant = fork();
-    if (pid < 0)
+    if (pid_enfant < 0)
         exit(1);
     else if (pid_enfant == 0) {
         ptrace(PTRACE_TRACEME, pid_enfant, NULL, NULL);
-        execve(argv[1], argv[1], NULL);
+        raise(SIGSTOP);
+        execve(argv[1], &argv[1], NULL);
     return 0;
 }
