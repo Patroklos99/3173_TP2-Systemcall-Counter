@@ -27,11 +27,14 @@ int main(int argc, char *argv[]) {
         raise(SIGSTOP);
         execve(argv[1], &argv[1], NULL);
     else {
-	wait(status);
-	ptrace(PTRACE_SETOPTIONS, pid_enfant, 0,PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
 	while(1) {
-		break;
+		pid_t pe = wait(&status);
+            ptrace(PTRACE_SETOPTIONS, pid_enfant, 0,PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
+            if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_EXEC << 8)))
+                compteur1++;
 	}
     }
+        if (counter1 + counter == 0) {
+        printf("%d", 0);
     return 0;
 }
