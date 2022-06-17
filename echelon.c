@@ -32,6 +32,10 @@ int main(int argc, char *argv[]) {
             ptrace(PTRACE_SETOPTIONS, pid_enfant, 0,PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
             if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_EXEC << 8)))
                 compteur1++;
+            if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_FORK << 8)))
+                compteur2++;
+            if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_CLONE << 8)))
+                compteur2++;
 	}
     }
         if (counter1 + counter == 0) {
