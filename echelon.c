@@ -16,9 +16,10 @@
 #include <sys/ptrace.h>
 
 int main(int argc, char *argv[]) {   
-    pid_t pid_enfant = fork();
     int status;
-    wait(&status);
+    int compteur_1 = 0;
+    int counter_2 = 0;
+    pid_t pid_enfant = fork();
     if (pid_enfant == -1) {
         exit(1);
     } else {
