@@ -22,7 +22,7 @@
  * @param nb_fork_clone nb de clones et fork executés.
  * @param status valeur necessaire pour les validations.
  *
- * return le numero du signal correspondant à la cause de la soirtie + 128.
+ * return le numero du signal correspondant à la cause de la sortie + 128.
  */
 int valider_sortie_signal(const int *nb_execve, const int *nb_fork_clone, const int status) {
     printf("%d\n", *nb_fork_clone);
@@ -37,7 +37,7 @@ int valider_sortie_signal(const int *nb_execve, const int *nb_fork_clone, const 
  * @param nb_fork_clone nb de clones et fork executés.
  * @param status valeur necessaire pour les validations.
  *
- * return le numero du signal correspondant à la cause de la soirtie + 128.
+ * return le numero du signal correspondant à la cause de la sortie.
  */
 int valider_sortie_correcte(const int *nb_execve, const int *nb_fork_clone, const int status) {
     if (*nb_execve + *nb_fork_clone == 0) {
@@ -110,7 +110,6 @@ int executer_processus_parent(int status, int *nb_execve, int *nb_fork_clone, pi
     }
 }
 
-
 int main(int argc, char *argv[]) {
     int status = 0;
     int nb_execve = 0;
@@ -126,6 +125,6 @@ int main(int argc, char *argv[]) {
         raise(SIGSTOP);
         execve(argv[1], &argv[1], NULL);
         return 1;
-    } else 
+    } else
         return executer_processus_parent(status, &nb_execve, &nb_fork_clone, pid_enfant);
 }
