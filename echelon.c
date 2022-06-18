@@ -30,6 +30,7 @@ main(int argc, char *argv[]) {
     int compteur1 = 0;
     int compteur2 = 0;
     pid_t pid_enfant = fork();
+    int numero_signal = 0;
     if (pid_enfant < 0)
         exit(1);
     else if (pid_enfant == 0) {
@@ -38,15 +39,26 @@ main(int argc, char *argv[]) {
         execve(argv[1], &argv[1], NULL);
     } else {
         while (1) {
-            pid_t id_valide  = wait(&status);
+            pid_t pid_valide  = wait(&status);
             ptrace(PTRACE_SETOPTIONS, pid_enfant, 0,PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
-            incrementer_compteurs(&compteur1, &compteur2, status, pid_enfant);
-	    if (WIFEXITED(status) && pe == pid_enfant){
+            incrementer_compteurs(&compteur1, &compteur2, status);
+
+	    if (WIFSTOPPED(status)) {
+        numero_signal = WSTOPSIG(status);
+        if (numero_signal == SIGTRAP)
+            numero_signal = 0;
+    }
+    return numero_signal;
+	    if (WIFEXITED(status) && pid_valide == pid_enfant){
                 printf("%d\n", compteur2);
                 printf("%d", compteur1);
                 return WEXITSTATUS (status);
+            } else if (WIFSIGNALED(status)){
+                printf("%d\n", compteur2);
+                printf("%d", compteur1);
+                return 128 + WTERMSIG(status);
             }
-	    ptrace(PTRACE_CONT, id_valide, 0, 0);
+	    ptrace(PTRACE_CONT, pid_valide, 0, 0);
         }
     }
 }
