@@ -41,16 +41,12 @@ main(int argc, char *argv[]) {
             pid_t id_valide  = wait(&status);
             ptrace(PTRACE_SETOPTIONS, pid_enfant, 0,PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
             incrementer_compteurs(&compteur1, &compteur2, status, pid_enfant);
+	    if (WIFEXITED(status) && pe == pid_enfant){
+                printf("%d\n", compteur2);
+                printf("%d", compteur1);
+                return WEXITSTATUS (status);
+            }
 	    ptrace(PTRACE_CONT, id_valide, 0, 0);
         }
     }
-    if (compteur1 + compteur2 == 0) {
-        printf("%d", 0);
-    } else if (WIFSIGNALED (status)) {
-        return 128 + WTERMSIG(status);
-    } else {
-        printf("%d\n", compteur2);
-        printf("%d", compteur1);
-    }
-
 }
