@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     else if (pid_enfant == 0) {
         err = (int) ptrace(PTRACE_TRACEME, pid_enfant, NULL, NULL);
-        if (err == -1)
+        if (err == 1)
             return err;
         raise(SIGSTOP);
         execve(argv[1], &argv[1], NULL);
