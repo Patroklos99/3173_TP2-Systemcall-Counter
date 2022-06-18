@@ -1,4 +1,4 @@
-/*  INF3173 - TP1
+/*  INF3173 - TP1`
  *  Session : été 2022
  *
  *  IDENTIFICATION.
@@ -15,7 +15,17 @@
 #include <sys/wait.h>
 #include <sys/ptrace.h>
 
-int main(int argc, char *argv[]) {   
+void incrementer_compteurs(int *compteur1, int *compteur2, int status, int pid_enfant) {
+    if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_EXEC << 8)))
+        (*compteur1)++;
+    if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_FORK << 8)))
+        (*compteur2)++;
+    if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_CLONE << 8)))
+        (*compteur2)++;
+}
+
+int
+main(int argc, char *argv[]) {
     int status;
     int compteur1 = 0;
     int compteur2 = 0;
@@ -26,19 +36,21 @@ int main(int argc, char *argv[]) {
         ptrace(PTRACE_TRACEME, pid_enfant, NULL, NULL);
         raise(SIGSTOP);
         execve(argv[1], &argv[1], NULL);
-    else {
-	while(1) {
-		pid_t pe = wait(&status);
+    } else {
+        while (1) {
+            pid_t id_valide  = wait(&status);
             ptrace(PTRACE_SETOPTIONS, pid_enfant, 0,PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
-            if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_EXEC << 8)))
-                compteur1++;
-            if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_FORK << 8)))
-                compteur2++;
-            if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_CLONE << 8)))
-                compteur2++;
-	}
+            incrementer_compteurs(&compteur1, &compteur2, status, pid_enfant);
+	    ptrace(PTRACE_CONT, id_valide, 0, 0);
+        }
     }
-        if (counter1 + counter == 0) {
-        printf("%d", 0);
-    return 0;
+//    if (counter1 + counter == 0) {
+//        printf("%d", 0);
+//    } else if (WIFSIGNALED (status)) {
+//        return 128 + WTERMSIG(status);
+//    } else {
+//        printf("%d\n", counter1);
+//        printf("%d", counter);
+//    }
+
 }
