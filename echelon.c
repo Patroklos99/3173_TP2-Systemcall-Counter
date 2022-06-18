@@ -15,7 +15,7 @@
 #include <sys/wait.h>
 #include <sys/ptrace.h>
 
-void incrementer_compteurs(int *compteur1, int *compteur2, int status, int pid_enfant) {
+void incrementer_compteurs(int *compteur1, int *compteur2, int status) {
     if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_EXEC << 8)))
         (*compteur1)++;
     if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_FORK << 8)))
@@ -44,13 +44,13 @@ main(int argc, char *argv[]) {
 	    ptrace(PTRACE_CONT, id_valide, 0, 0);
         }
     }
-//    if (counter1 + counter == 0) {
-//        printf("%d", 0);
-//    } else if (WIFSIGNALED (status)) {
-//        return 128 + WTERMSIG(status);
-//    } else {
-//        printf("%d\n", counter1);
-//        printf("%d", counter);
-//    }
+    if (compteur1 + compteur2 == 0) {
+        printf("%d", 0);
+    } else if (WIFSIGNALED (status)) {
+        return 128 + WTERMSIG(status);
+    } else {
+        printf("%d\n", compteur2);
+        printf("%d", compteur1);
+    }
 
 }
