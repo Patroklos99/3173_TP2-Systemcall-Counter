@@ -1,4 +1,4 @@
-/*  INF3173 - TP1`
+/*  INF3173 - TP1
  *  Session : été 2022
  *
  *  IDENTIFICATION.
@@ -37,8 +37,9 @@ int executer_processus_parent(int status, int *compteur1, int *compteur2, pid_t 
     int numero_signal = 0;
     while (1) {
         pid_t pid_valide = wait(&status);
-        ptrace(PTRACE_SETOPTIONS, pid_enfant, 0,
-               PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
+        if (pid_valide == -1)
+            return pid_valide;
+        ptrace(PTRACE_SETOPTIONS, pid_enfant, 0, PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
         incrementer_compteurs(compteur1, compteur2, status);
         numero_signal = trouver_numero_signal(&numero_signal, status);
         if (WIFEXITED(status) && pid_valide == pid_enfant) {
@@ -59,11 +60,14 @@ int main(int argc, char *argv[]) {
     int status = 0;
     int compteur1 = 0;
     int compteur2 = 0;
+    int err = 0;
     pid_t pid_enfant = fork();
     if (pid_enfant < 0)
         exit(1);
     else if (pid_enfant == 0) {
-        ptrace(PTRACE_TRACEME, pid_enfant, NULL, NULL);
+        err = (int )ptrace(PTRACE_TRACEME, pid_enfant, NULL, NULL);
+        if (err == -1)
+            return err;
         raise(SIGSTOP);
         execve(argv[1], &argv[1], NULL);
         return 1;
