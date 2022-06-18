@@ -9,12 +9,19 @@
  *      Groupe : 40
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <sys/ptrace.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <sys/ptrace.h>
+#include <stdlib.h>
+#include <stdio.h>
 
+/*
+ * Valide les sigtrap pour l'incrementation correspondante des compteurs
+ *
+ * @param compteur1 premiere variable à augmenter
+ * @param compteur1 deuxieme variable à augmenter.
+ * @param status valeur necessaire pour les validations.
+ */
 void incrementer_compteurs(int *compteur1, int *compteur2, int status) {
     if (status >> 8 == (SIGTRAP | (PTRACE_EVENT_EXEC << 8)))
         (*compteur1)++;
@@ -24,6 +31,15 @@ void incrementer_compteurs(int *compteur1, int *compteur2, int status) {
         (*compteur2)++;
 }
 
+/*
+ * Valide si le signal est un sigtrap pour faire la modification correspondante.
+ *
+ * @param compteur1 premiere variable à augmenter
+ * @param compteur1 deuxieme variable à augmenter.
+ * @param status valeur necessaire pour les validations.
+ * 
+ * return numero_signal numero correspondant si cest un sigtrap ou une autre valeur s'il ne l'est pas.
+ */
 int trouver_numero_signal(int *numero_signal, int status) {
     if (WIFSTOPPED(status)) {
         *numero_signal = WSTOPSIG(status);
