@@ -39,13 +39,19 @@ int executer_processus_parent(int status, int *compteur1, int *compteur2, pid_t 
         pid_t pid_valide = wait(&status);
         if (pid_valide == -1)
             return pid_valide;
-        ptrace(PTRACE_SETOPTIONS, pid_enfant, 0, PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
+        ptrace(PTRACE_SETOPTIONS, pid_enfant, 0,
+               PTRACE_O_EXITKILL | PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACECLONE);
         incrementer_compteurs(compteur1, compteur2, status);
         numero_signal = trouver_numero_signal(&numero_signal, status);
         if (WIFEXITED(status) && pid_valide == pid_enfant) {
-            printf("%d\n", *compteur2);
-            printf("%d", *compteur1);
-            return WEXITSTATUS (status);
+            if (*compteur1 + *compteur2 == 0) {
+                printf("%d", *compteur2);
+                return WEXITSTATUS (status);
+            } else {
+                printf("%d\n", *compteur2);
+                printf("%d", *compteur1);
+                return WEXITSTATUS (status);
+            }
         } else if (WIFSIGNALED(status)) {
             printf("%d\n", *compteur2);
             printf("%d", *compteur1);
@@ -65,7 +71,7 @@ int main(int argc, char *argv[]) {
     if (pid_enfant < 0)
         exit(1);
     else if (pid_enfant == 0) {
-        err = (int )ptrace(PTRACE_TRACEME, pid_enfant, NULL, NULL);
+        err = (int) ptrace(PTRACE_TRACEME, pid_enfant, NULL, NULL);
         if (err == -1)
             return err;
         raise(SIGSTOP);
